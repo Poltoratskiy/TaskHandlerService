@@ -1,18 +1,15 @@
 import ast
 import pickle
-import configparser
 import redis
 from flask import Flask
 
 from model.Task import Task
 
 app = Flask(__name__)
-cfg = configparser.ConfigParser()
-cfg.read("./configs/config.ini")
 
-r_new_tasks = redis.StrictRedis(host="localhost", port=6379, db=0, password=cfg.get("redis", "api_key"))
-r_handled_tasks = redis.StrictRedis(host="localhost", port=6379, db=1, password=cfg.get("redis", "api_key"))
+r_new_tasks = redis.StrictRedis(host="redis", port=6379, db=0)
 
+r_handled_tasks = redis.StrictRedis(host="redis", port=6379, db=1)
 
 def idx_generator():
     '''
@@ -20,18 +17,19 @@ def idx_generator():
     :return: int id
     '''
     try:
-        lst = list(map(int, list(map(lambda x: x.decode("UTF-8"), list(r_handled_tasks.keys())))))
-        print(lst)
+        lst = list(r_handled_tasks.keys())
         if not lst:
-            lst = list(map(int, list(map(lambda x: x.decode("UTF-8"), list(r_new_tasks.keys())))))
+            lst = list(r_new_tasks.keys())
             print(lst)
             if not lst:
                 i = 1
             else:
+                lst = list(map(int, lst))
                 i = max(lst) + 1
         else:
+            lst = list(map(int, lst))
             i = max(lst) + 1
-    except ValueError:
+    except (AttributeError, ValueError):
         i = 1
     while True:
         yield i
@@ -44,10 +42,10 @@ def put_task_in_queue():
     route for new task
     :return: int id task
     """
-    global idx_gen
     new_idx = next(idx_gen)
     task = Task(new_idx)
     r_new_tasks.set(new_idx, pickle.dumps(task))
+    print(new_idx)
     return str(new_idx)
 
 

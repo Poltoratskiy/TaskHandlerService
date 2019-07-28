@@ -1,19 +1,20 @@
+import os
+import sys
 import time
-import configparser
 import pickle
 import random
 import redis
 from celery import Celery
+
+sys.path.append('../')
 from model.Task import Task
 
-cfg = configparser.ConfigParser()
-cfg.read("./configs/config.ini")
-r_new_tasks = redis.StrictRedis(host="localhost", port=6379, db=0, password=cfg.get("redis", "api_key"))
-r_handled_tasks = redis.StrictRedis(host="localhost", port=6379, db=1, password=cfg.get("redis", "api_key"))
-POOL_SIZE = int(cfg.get("constraints", "pool_size"))
+r_new_tasks = redis.StrictRedis(host="redis", port=6379, db=0)
+r_handled_tasks = redis.StrictRedis(host="redis", port=6379, db=1)
+
+POOL_SIZE = int(os.getenv('POOL_SIZE', 2))
 current_pool_size = 0
-app = Celery('periodic',
-             broker=f"""redis://:{cfg.get("redis", "api_key")}@localhost:6379/2""")
+app = Celery('periodic', broker='redis://redis:6379/2', backend='redis://redis:6379/2')
 
 
 @app.on_after_configure.connect
@@ -38,11 +39,9 @@ def check_size():
         if tasks:
             current_pool_size += 1
             min_idx = min(tasks)
-            print(min_idx)
             task = r_new_tasks.get(min_idx)
-            print(task)
-            task = pickle.loads(task)
-            task.run()
-            r_handled_tasks.set(min_idx, pickle.dumps(task))
+            t = pickle.loads(task)
+            t.run()
+            r_handled_tasks.set(min_idx, pickle.dumps(t))
             r_new_tasks.delete(min_idx)
-            task_handler(task=task)
+            task_handler(task=t)

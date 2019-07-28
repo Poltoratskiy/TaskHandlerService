@@ -22,4 +22,4 @@ class Task:
         return str({"create_time": str(self.create_time),
                     "start_time": str(self.start_time),
                     "status": self.status,
-                    "time_to_execute": str(self.time_to_execute)})
+                    "time_to_execute": self.time_to_execute})
