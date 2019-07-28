@@ -20,7 +20,6 @@ def idx_generator():
         lst = list(r_handled_tasks.keys())
         if not lst:
             lst = list(r_new_tasks.keys())
-            print(lst)
             if not lst:
                 i = 1
             else:
@@ -45,7 +44,6 @@ def put_task_in_queue():
     new_idx = next(idx_gen)
     task = Task(new_idx)
     r_new_tasks.set(new_idx, pickle.dumps(task))
-    print(new_idx)
     return str(new_idx)
 
 
