@@ -1,6 +1,6 @@
 amqp==2.5.0
 billiard==3.6.0.0
-celery==4.3.0
+celery==5.2.2
 Click==7.0
 config==0.4.2
 Flask==1.1.1
